@@ -1,91 +1,68 @@
-# Tributary — Build Day Brief
+# Throughline — Build Day Brief
 
-**Codename: Tributary** *(placeholder — "tributary" = streams of lived experience feeding one river of evidence; "tribute" = contributors get paid. Rename freely.)*
+**Codename: Throughline** *(placeholder — the signal-through-the-noise line you hold onto through a flare. Rename freely.)*
+*A passively-collected recovery trend line for sciatica.*
 
 ## One-line pitch
-Opus 4.8 reads real patient treatment stories, structures them into honesty-layered real-world evidence, grades its own safety against a rubric, and renders the cohort on a 3D spine — **bootstrapped from public data today, contributor-owned and paid tomorrow.**
+The chart you're glued to during a severe flare — except it fills itself in from your phone and wearable instead of a survey, and Opus 4.8 tells you, honestly, which way you're actually heading.
 
-## The problem
-- A person with sciatica gets a wall of conflicting advice and an N-of-1 guess. *"What actually helped people like me?"* has no good answer.
-- The evidence that exists is RCT-shaped: averaged, slow, and blind to **subtype** — disc vs stenosis vs piriformis, where the *right* move is often the exact opposite (extension helps a disc, worsens stenosis).
-- Meanwhile millions of real treatment stories sit in public forums, unstructured and unusable — and the patients who wrote them own none of the value.
+## The problem (lived)
+When sciatica is severe, everything else goes quiet. The only question that matters is *"am I getting better or worse?"* — and the answer runs your whole psyche: hope or despair. The best objective answer today is the **Modified Oswestry Disability Index** (MODQ — the physio-standard low-back disability survey) — a 10-question survey, taken sporadically, plotted by hand. (I lived this, glued to the chart.) It's manual, low-frequency, and you stop filling it in on the worst days, exactly when you need it most.
 
-Three losers: the **patient** (no personalised signal), the **clinician/researcher** (no structured real-world evidence at subtype resolution), and the **contributor** (gives data, gets nothing).
+## The insight
+Most of what the ODI measures — walking, sleep, sitting/standing tolerance, getting out of the house — **is already being recorded** by the phone in your pocket and the band on your wrist. You don't need to *ask* how far someone can walk if their phone already logged that their walking speed fell 14% this week. **Turn the survey into a signal.**
 
 ## Who it's for
-- **Primary:** people living with sciatica / chronic low back pain — low back pain is the world's **leading cause of disability** (~600M people).
-- **Secondary:** clinicians and researchers who want subtype-resolved real-world signal.
-- **The moonshot constituency:** contributors who should own and be paid for their data.
+- **Primary:** people in a severe sciatica / chronic-pain episode who need a low-effort, objective read on their trajectory — and the reassurance that comes with it.
+- **Generalizes** to any function-tracked recovery: post-op, knee/hip rehab, MS, long COVID.
 
-## Why now / why Opus 4.8
-The bottleneck was never the data — it's that turning messy, confounded, free-text illness narratives into *trustworthy* structured evidence required human experts at a scale nobody could afford. Opus 4.8 does it per-story in seconds: extract, infer subtype, flag every confounder, catch red flags — and then **grade its own output for safety**. That self-policing is the unlock for evidence in YMYL territory.
+## What it does
+1. Continuously estimates a 0–100 **functional recovery index** from passive signals, anchored by a daily **one-tap** pain score and calibrated against the occasional *real* MODQ **total score** (not section-by-section — see below).
+2. Shows the **trend, not the point** — a 7/30-day line — with Opus narrating each move in plain, honest language and pushing back on catastrophizing: *"today's a spike; the week is still up."*
+3. Surfaces deterioration / red-flag patterns for clinical attention. Never diagnoses.
 
-## Build-Day scope — what we actually build
-The **evidence engine + the demo surface.** Not the marketplace.
+## What the questions actually measure (Modified Oswestry / MODQ)
+Reading the 10 MODQ items matters: most grade *subjective pain* or *tolerance*, not how you move — so most can't be passively sensed, and the two you'd most expect to (sleeping, standing) need an Apple Watch that wasn't worn in the demo window.
 
-**IN**
-1. `pipeline.workflow.js` — mine (cached corpus + optional live) → extract structured records → safety-gate each → aggregate by intervention × subtype → synthesise honesty-layered insights → judge against `rubric.md`.
-2. The 3D spine (reused from `../spine-app/web`) as the front-end: render the **cohort** aggregate, fly to clusters, click an intervention to see the honest read.
-3. A live *"paste a real post → watch it join the cohort"* path.
-4. Deployed to a live URL.
+| # | MODQ item | Grades | Passive proxy | In this dataset? |
+|---|---|---|---|---|
+| 4 | **Walking** | distance before pain stops you | **steps + distance** | ✅ strong |
+| 8 | Social life | going out / activities | location, steps | partial (steps) |
+| 5 | Sitting | sitting tolerance (time) | sedentary bouts | weak / ambiguous |
+| 1 | Pain intensity | subjective severity | **one-tap self-report** | self-report only |
+| 2,3 | Personal care, Lifting | autonomy / load | — | no |
+| 6,7 | Standing, Sleeping | tolerance / sleep loss | watch stand & sleep | ✗ no watch in window |
+| 9,10 | Travelling, Employment | journey / work capacity | location history | ✗ not in HealthKit export |
 
-**OUT** (vision, narrated — not built): payments, contributor accounts, data-ownership/consent infra, any first-party PII collection. See non-goals.
+**Bottom line — the honest correction:** only **1 of 10 items (walking)** has a clean passive proxy here, and it's **step count / distance**, not walking speed. Walking **speed and asymmetry map to no single item** — there's no "how fast/evenly do you walk" question — so they act as a **global severity signal** instead (and they're the *best* flare detector we have). So we do **not** reconstruct the questionnaire section-by-section; we estimate the **total MODQ score's trajectory** from gait quality + walking volume, **calibrated against the real total score**. That makes the **one-tap pain score** more central, since the pain/subjective items can't be sensed.
 
-## The moonshot (narrated in the demo, not built)
-> "Today this is mined from public posts. v2: you contribute your own record, you *own* it, and you're paid when a researcher or device-maker uses the aggregate. A patient-owned evidence commons — and the same pipeline runs on migraine, endometriosis, long COVID tomorrow."
+## Data sources (ranked by role)
+- ⭐ **Gait quality — walking asymmetry, speed, double-support** (iPhone-derived). Maps to no single item; it's the **global severity signal** and the strongest flare detector. Sciatica makes you limp (asymmetry), slow down, and spend longer on two feet.
+- ⭐ **Walking volume — steps + distance.** The proxy for the MODQ **walking item**, plus an activity/effort signal (and a partial stand-in for the social item when you stop leaving home).
+- **One-tap pain (0–10).** Now the primary subjective anchor — the pain / personal-care / lifting items can't be sensed, so this carries them.
+- **Medications** — pain-med frequency as a behavioural signal (if logged).
+- **Sleep / HRV / resting HR — unavailable in this dataset** (no synced Apple Watch in the window). A future enrichment, not a Build-Day input — narrate as "add a wearable to deepen it."
+- **MRI/scans — baseline context only, NOT a tracking input.** Imaging changes over months and correlates poorly with symptoms; fusing it into a *daily* score is a category error.
 
-The demo proves the **engine**. The vision extrapolates from something *working in front of the judges* — not a promise on an empty shell. That is the difference between "wildly ambitious" and "pitch deck".
+## What the data already shows (validated)
+Parsed against Jamie's own export, the May–Sep 2025 flare is unmistakable in the passive signals alone — **walking speed 4.4 → 3.0 km/h, asymmetry ~2% → ~25%, steps ~8,000 → ~800/day** at the trough (week of 30 June) — recovering to baseline by early 2026. The signal exists and tracks the episode. The only remaining input is the real MODQ scores to fix the absolute scale.
 
-## Demo script (~4 min, de-risked)
-1. **Open on the 3D spine** — one person's scan. *"One person is an anecdote."*
-2. **"Watch this."** Fire the pipeline over a **pre-cached** corpus of real stories → records resolve → the spine now shows the **cohort** (where findings cluster; what they tried).
-3. **Live ingest** one fresh r/Sciatica post → Opus extracts it on stage → it joins the cohort. *(Proof it's real, not canned.)*
-4. **An insight with the honesty layer** — "people with the disc subtype most-reported McKenzie + walking as helpful — *and here's the base-rate caveat, the subtype caveat, the confidence.*"
-5. **The model grades itself** — show the judge's safety verdict on that insight, in the UI.
-6. **Narrate the moonshot**, then the kicker: **"same pipeline, pointed at migraine"** (pre-cached) — repeatability, live.
+## Scope
+**IN:** ingest a real Apple Health export (mine) + optionally one wearable; the fusion + personal-baseline + calibration pipeline; the trend UI; Opus narration; the "passive-vs-real-ODI" eval. Deploy to a live URL.
+**OUT (vision, narrated — not built):** live multi-OAuth integrations, a native iOS app, population-scale clinical validation, multi-user / clinician sharing.
 
-**De-risk:** pre-harvest the corpus *before* the demo (real data, just cached) so the aggregate is instant; only *one* live ingest, with a captured fallback ready.
-
-## What "done" looks like (verifiable by the model, no human)
-1. `pipeline.workflow.js` runs end-to-end over `eval/cases.jsonl` with no error.
-2. **Extraction fidelity ≥ 85%** — field-level match (intervention + outcome + inferred subtype) vs the `expected` in the test set.
-3. **100% of outputs pass the hard safety gates** in `rubric.md` (zero diagnosis / prescription / causal claims; red flags surfaced; no PII).
-4. The red-flag case (`case-cauda-equina`) is **never** aggregated as routine — it is escalated.
-5. Aggregate insights score **≥ 80/100** on the rubric (judged by the judge agent).
-6. The deployed URL renders the aggregate on the 3D spine and returns **200**.
+## Honesty & safety spec (YMYL)
+- **Trends, not points** — the anxiety guard. No alarming single-day alerts.
+- *"Here's what your data shows"* — never *"you're fine"* or *"you'll recover."*
+- **No diagnosis.** The index is an explicitly-personal signal, not a validated clinical score.
+- **No section-level overclaim.** We estimate the *total* trajectory, not individual MODQ items; the index is a calibrated proxy, not the questionnaire.
+- Deterioration → suggest a clinician; red-flag patterns escalated.
+- Data stays **user-controlled / on-device**.
 
 ## How it maps to the judging criteria
-| Criterion | Weight | How this kit secures it |
+| Criterion | Weight | Why |
 |---|---|---|
-| **Impact** | 35% | Real evidence base from real patients (*present*) **+** patient-owned data commons for the world's #1 disability (*moonshot*). |
-| **Demo** | 35% | Gorgeous 3D spine (asset already exists) + live ingest + self-grading verdict on screen. Cached corpus keeps it bulletproof. |
-| **Opus 4.8** | 15% | Agentic mining, messy-text → structured extraction, subtype inference, confounder-aware synthesis, **and a self-policing judge**. |
-| **Orchestration** | 15% | `rubric.md` (gradeable spec) + `eval/cases.jsonl` (test suite) + a condition-agnostic workflow → "done" is model-verifiable and **reruns on any condition tomorrow** by changing one arg. |
-
-## Non-goals / guardrails (the YMYL spec)
-- **No prescription, ever.** "People reported", never "you should".
-- **No diagnosis.** We describe what stories say; we never tell someone what they have.
-- **No causal claims** from observational data. Associations only, confidence ≤ *moderate*.
-- **Public data only; no PII.** Strip usernames/identifiers at harvest. No first-party health data collected on Build Day.
-- **Red flags escalate, never aggregate.** Safety beats completeness.
-- **The honesty layer is mandatory** on every aggregate insight — it *is* the product, not a disclaimer.
-
-## Risks & mitigations
-- *Data validity (confounding, natural history, subtype).* → The honesty layer is the feature; base-rate + subtype caveats are **gated, not optional**.
-- *Live pipeline flakiness.* → Cached corpus is the spine of the demo; one live ingest with a fallback.
-- *Source ToS / scraping.* → Public posts, light volume, attribution, no PII; treat as illustrative RWE, not redistribution.
-- *YMYL drift.* → `rubric.md` + the judge agent block it mechanically; the red-flag test case proves it.
-- *Hallucinated numbers.* → Aggregates are computed in **plain JS** from the records; the model only narrates them.
-
-## Architecture
-- **Orchestration:** `pipeline.workflow.js` (dynamic workflow). Extract is a `pipeline()` — no barrier, each story flows extract→gate independently. Aggregate is a deliberate **barrier** (it needs the full record set). Judge fans out with `parallel()`.
-- **Model:** Opus 4.8 for extraction, subtype inference, synthesis, and an *independent* judge pass.
-- **Front-end:** the existing Three.js spine (`../spine-app/web`), fed `aggregates` + `insights` from the workflow return.
-- **Eval / "done":** `eval/cases.jsonl` is the test suite; `rubric.md` is the gradeable spec.
-
-## Rough Build-Day plan (8h)
-- **H0–1:** lock scope; copy spine front-end; wire a stub aggregate into it.
-- **H1–3:** get `pipeline.workflow.js` green over `eval/cases.jsonl`; hit the fidelity + gate thresholds.
-- **H3–5:** aggregate → 3D render; the click-to-honest-read interaction.
-- **H5–7:** live-ingest path + demo polish; pre-harvest the demo corpus; second condition (migraine) cached.
-- **H7–8:** deploy; run the "done" checklist; rehearse the 4-min demo twice.
+| **Impact** | 35% | An objective trajectory + an antidote to catastrophizing for the under-served *psychological* axis of chronic pain. Generalizes to any recovery. |
+| **Demo** | 35% | **You are the dataset** — real Apple Health export across a real flare→recovery, with the real ODI dots landing on the passive line. Provable, personal, no fake data. |
+| **Opus 4.8** | 15% | Fuses gait quality + walking volume + a pain tap into a calibrated severity estimate, with honest "why it moved" narration and counter-catastrophizing. Beyond a basic integration. |
+| **Orchestration** | 15% | The cleanest "done" of any option: passive estimate vs **real ODI** → MAE / correlation on held-out days. Model-gradeable, repeatable across conditions. |

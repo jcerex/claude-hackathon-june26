@@ -1,0 +1,16 @@
+# Personal health data — never commit (PII + 100MB+ files, GitHub-rejectable)
+apple_health_export/
+daily_signals.csv
+trend.json
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (if added later)
+node_modules/
