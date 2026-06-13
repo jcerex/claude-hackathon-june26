@@ -30,8 +30,6 @@ export function CheckIn({ onScored }: { onScored: (s: ScoredSurvey) => void }) {
   const [voiceOut, setVoiceOut] = useState(false)
   const [listening, setListening] = useState(false)
 
-  // The full message array sent to the server (assistant turns hold the content
-  // blocks the server returned). Kept in a ref to avoid stale closures mid-turn.
   const messagesRef = useRef<InterviewMessage[]>([])
   const recogRef = useRef<any>(null)
   const logRef = useRef<HTMLDivElement>(null)
@@ -47,7 +45,7 @@ export function CheckIn({ onScored }: { onScored: (s: ScoredSurvey) => void }) {
     if (!voiceOut || !ttsSupported) return
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
-    u.rate = 1.02
+    u.rate = 1.0
     window.speechSynthesis.speak(u)
   }
 
@@ -60,7 +58,7 @@ export function CheckIn({ onScored }: { onScored: (s: ScoredSurvey) => void }) {
         messagesRef.current = messages
         setResult(resp.survey)
         setPhase('done')
-        const line = `All done — your Modified Oswestry score is ${resp.survey.modq_total} out of 100 (${band(resp.survey.modq_total)}). I've added it to your trajectory.`
+        const line = `Thank you. That's a Modified Oswestry score of ${resp.survey.modq_total} out of 100 — ${band(resp.survey.modq_total)}. I've noted it on your trajectory.`
         setTranscript((t) => [...t, { role: 'assistant', text: line }])
         onScored(resp.survey)
         speak(line)
@@ -119,74 +117,75 @@ export function CheckIn({ onScored }: { onScored: (s: ScoredSurvey) => void }) {
   const active = phase === 'asking' || phase === 'thinking'
 
   return (
-    <section className="card checkin">
+    <>
       <div className="checkin-head">
         <div>
-          <h2>Check in with Claude</h2>
-          <p className="sub2">Opus runs the Modified Oswestry as a short conversation, scores it, and drops the point on your trajectory.</p>
+          <h2>Today&rsquo;s check&#8209;in</h2>
+          {phase === 'idle' && <p className="sub2">A few short questions about how your back is — I&rsquo;ll note where things are, gently.</p>}
         </div>
         {ttsSupported && (
-          <label className="voice-toggle" title="Read Claude's questions aloud">
+          <label className="voice-toggle" title="Read the questions aloud">
             <input type="checkbox" checked={voiceOut} onChange={(e) => setVoiceOut(e.target.checked)} />
             🔊 voice
           </label>
         )}
       </div>
 
-      <div className="chatlog" ref={logRef}>
-        {transcript.length === 0 && phase === 'idle' && (
-          <p className="placeholder">Press <strong>Start check-in</strong>. Answer in your own words — by text, or by voice with the 🎙 button. Ten quick reads on how your back's affecting everyday things.</p>
-        )}
-        {transcript.map((b, i) => (
-          <div key={i} className={`bubble ${b.role}`}>
-            <span className="who">{b.role === 'assistant' ? 'Claude' : 'You'}</span>
-            <p>{b.text}</p>
+      {phase === 'idle' ? (
+        <div className="begin-wrap">
+          <div className="begin">
+            <span className="begin-halo" aria-hidden="true" />
+            <button className="begin-btn" onClick={start}>Begin check-in</button>
           </div>
-        ))}
-        {busy && <div className="bubble assistant pending"><span className="who">Claude</span><p className="dots">thinking…</p></div>}
-        {error && <p className="err">⚠ {error}{error.includes('ANTHROPIC_API_KEY') ? ' — set it in app/.env and restart.' : ''}</p>}
-      </div>
-
-      {result && (
-        <div className="score-banner">
-          <div className="score-num">{result.modq_total}<span>/100</span></div>
-          <div className="score-meta">
-            <strong>{band(result.modq_total)}</strong>
-            <span>MODQ recorded {result.date} · added to the chart ↑</span>
-          </div>
+          <p className="begin-hint">Speak or type — whatever&rsquo;s easiest right now.</p>
         </div>
-      )}
+      ) : (
+        <>
+          <div className="chatlog" ref={logRef}>
+            {transcript.map((b, i) => (
+              <div key={i} className={`bubble ${b.role}`}>
+                <span className="who">{b.role === 'assistant' ? 'Claude Opus 4.8' : 'You'}</span>
+                <p>{b.text}</p>
+              </div>
+            ))}
+            {busy && <div className="bubble assistant pending"><span className="who">Claude Opus 4.8</span><p className="dots">thinking</p></div>}
+            {error && <p className="err">⚠ {error}{error.includes('ANTHROPIC_API_KEY') ? ' — set it in app/.env and restart.' : ''}</p>}
+          </div>
 
-      <div className="composer">
-        {phase === 'idle' && (
-          <button className="btn primary" onClick={start}>Start check-in</button>
-        )}
-        {active && (
-          <>
-            <input
-              className="answer"
-              value={input}
-              placeholder={listening ? 'Listening…' : 'Type your answer…'}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') send(input) }}
-              disabled={busy}
-              autoFocus
-            />
-            {sttSupported && (
-              <button
-                className={`btn mic ${listening ? 'on' : ''}`}
-                onClick={toggleListen}
-                disabled={busy}
-                title="Answer by voice"
-              >🎙</button>
+          {result && (
+            <div className="score-banner">
+              <div className="score-num">{result.modq_total}<span>/100</span></div>
+              <div className="score-meta">
+                <strong>{band(result.modq_total)}</strong>
+                <span>noted {result.date} · a trend, not a verdict</span>
+              </div>
+            </div>
+          )}
+
+          <div className="composer">
+            {active && (
+              <>
+                <input
+                  className="answer"
+                  value={input}
+                  placeholder={listening ? 'Listening…' : 'Type your answer…'}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') send(input) }}
+                  disabled={busy}
+                  autoFocus
+                />
+                {sttSupported && (
+                  <button className={`btn mic ${listening ? 'on' : ''}`} onClick={toggleListen} disabled={busy} title="Answer by voice">🎙</button>
+                )}
+                <button className="btn primary" onClick={() => send(input)} disabled={busy || !input.trim()}>Send</button>
+              </>
             )}
-            <button className="btn primary" onClick={() => send(input)} disabled={busy || !input.trim()}>Send</button>
-          </>
-        )}
-        {(phase === 'done' || phase === 'error') && (
-          <button className="btn" onClick={start}>New check-in</button>
-        )}
-      </div>
-    </section>
+            {(phase === 'done' || phase === 'error') && (
+              <button className="btn" onClick={start}>New check-in</button>
+            )}
+          </div>
+        </>
+      )}
+    </>
   )
 }

@@ -39,6 +39,7 @@ A remote MCP server is mounted at **`/mcp`** on the same Hono listener (`server/
 | `get_risk(days?)` | flare-risk read — current score + flags (`over_exertion` / `high_exposure` / `pressure_swing`) + history |
 | `get_evidence()` | the proven-vs-not scorecard + key validation numbers |
 | `run_checkin(...10 MODQ items 0–5...)` | records a conversationally-administered MODQ; reports the scored total + band |
+| `send_telegram(message)` | pushes one honest, Opus-composed reminder to Telegram (bot token + chat_id from server env) — the scheduled-routine nudge channel |
 
 The **honesty rubric is baked into the server `instructions` and every tool's output**, so Opus reasons with the right discipline even without the skill loaded. The companion skill lives at `skills/throughline-companion/SKILL.md` — ship it alongside the connector for the full conversational discipline (esp. how to run the MODQ before calling `run_checkin`).
 
@@ -52,6 +53,16 @@ curl -s -H 'content-type: application/json' -H 'accept: application/json, text/e
 **Connect in claude.ai** (the app is deployed — see below): Settings → Connectors → **Add custom connector** → URL `https://throughline-spine.fly.dev/mcp` (authless). Then ask *"how's my back this week — am I at risk?"* → Opus answers from real data, honestly. That's the demo closer.
 
 > ⚠️ The connector is **authless** and serves personal health data. Fine for a private demo on a non-guessable URL; for anything shared, put it behind OAuth or de-identify the seed.
+
+### Daily reminder via Telegram (the scheduled-routine nudge)
+`send_telegram` lets a **Claude Routine** push a daily, honest one-liner to Telegram instead of waiting for you to open the app. The bot token + chat_id are server-side secrets (never in the image):
+```sh
+fly secrets set TELEGRAM_BOT_TOKEN=... TELEGRAM_CHAT_ID=... -a throughline-spine
+```
+Get a token from **@BotFather** (`/newbot`); get your `chat_id` by messaging the bot once, then `curl https://api.telegram.org/bot<token>/getUpdates`. Routine prompt to schedule it (Claude Code `/schedule`, with the Throughline connector enabled):
+> *"Each morning, read my Throughline recovery trajectory and risk via the connector, then send me one gentle, honest sentence on Telegram with a link to check in."*
+
+Honest by design: a scheduled routine runs unattended, so this is a **reminder + passive read**, not an unattended scored MODQ — the interactive check-in still happens in the app. Bot chats aren't end-to-end encrypted, so the message carries a trend, not detail.
 
 ## Check-in UI (the conversational-Opus moment)
 `src/CheckIn.tsx` is a chat panel that drives `POST /api/interview` — Opus conducts the Modified Oswestry as a short conversation, scores it, and the point lands on the chart (a fresh check-in is dated today, so the x-axis unions timeline + survey dates). Voice is via the browser **Web Speech API**: 🎙 mic (`SpeechRecognition`, auto-sends) and a 🔊 toggle (`SpeechSynthesis`); both feature-detected, text is the baseline.

@@ -46,9 +46,20 @@ for i, dt in enumerate(dates):
     if i >= 5 and cur - min(idx[x] for x in dates[i - 5:i]) >= 18 and trend == "worsening":
         turning = "relapse_onset"
 
+    # Short-horizon forecast. A naive slope extrapolation (cur + slope*horizon)
+    # overshoots to 0/100 on steep days, which is not physically sensible — sciatica
+    # mean-reverts toward recovery absent a new insult. So: carry current momentum but
+    # DAMP it, while reverting toward a natural-history recovery prior each day.
     horizon = 14
-    fc = max(0.0, min(100.0, cur + slope * horizon))
-    half = min(40.0, 10 + abs(slope) * horizon * 0.8 + 8)
+    PRIOR, DAMP, REVERT = 12.0, 0.82, 0.06   # recovered MODQ ~12 · velocity decay · daily pull to prior
+    f, v = cur, slope
+    for _ in range(horizon):
+        f += v                          # carry momentum…
+        f += REVERT * (PRIOR - f)       # …while reverting toward recovery
+        v *= DAMP                       # momentum fades
+        f = max(0.0, min(100.0, f))
+    fc = f
+    half = min(34.0, 12.0 + abs(slope) * 5.0)
     flo, fhi = max(0.0, fc - half), min(100.0, fc + half)
 
     flags = []

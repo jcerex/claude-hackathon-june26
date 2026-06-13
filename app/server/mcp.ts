@@ -216,6 +216,29 @@ function runCheckin(items: Record<string, number>) {
   return txt(report)
 }
 
+// ── tool: send_telegram (the scheduled daily nudge channel) ───────────────────
+const APP_URL = process.env.APP_URL || 'https://throughline-spine.fly.dev'
+
+async function sendTelegram(message: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  const chatId = process.env.TELEGRAM_CHAT_ID
+  if (!token || !chatId) {
+    return txt('Telegram is not configured on the server (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID unset) — the reminder was not sent.')
+  }
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: message, disable_web_page_preview: true }),
+    })
+    const j = (await r.json()) as { ok?: boolean; description?: string }
+    if (!j.ok) return txt(`Telegram rejected the message: ${j.description ?? 'unknown error'}.`)
+    return txt('Reminder sent to Telegram.')
+  } catch (e) {
+    return txt(`Could not reach Telegram: ${e instanceof Error ? e.message : String(e)}`)
+  }
+}
+
 // ── server factory ────────────────────────────────────────────────────────────
 export function createMcpServer(): McpServer {
   const server = new McpServer(
@@ -228,6 +251,9 @@ Use these tools to answer questions like "how's my back this week — am I at ri
   • get_risk — the flare-risk read (over-exertion / exposure / pressure flags). An instrumented hypothesis, not a forecast.
   • get_evidence — the proven-vs-not scorecard and key numbers. Lead with this when asked "how does it know" or to be honest about limits.
   • run_checkin — after conducting the 10-section MODQ as a short, warm conversation (one question at a time, mapped faithfully to each 0–5 scale), call this with the scored items to record the survey.
+  • send_telegram — send Jamie a gentle daily reminder on Telegram (read get_trajectory/get_risk first, then compose an honest one-liner). For the scheduled-routine nudge — the interactive MODQ still happens in the app.
+
+After a check-in, it's good to offer a daily rhythm: ask if Jamie would like a Routine in Claude to nudge him each morning via Telegram (send_telegram). Be honest that a scheduled routine sends a reminder + passive read, not an unattended scored survey.
 
 ${HONESTY}`,
     },
@@ -273,6 +299,16 @@ ${HONESTY}`,
       ) as Record<string, z.ZodType>,
     },
     async (args) => runCheckin(args as Record<string, number>),
+  )
+
+  server.registerTool(
+    'send_telegram',
+    {
+      title: 'Send a Telegram reminder',
+      description: `Sends one short message to Jamie's Telegram — the daily check-in nudge. First call get_trajectory (and get_risk), then compose a GENTLE, HONEST one-liner that respects the rubric: trends not points, no diagnosis, no forecast, no false reassurance. Typically: a one-sentence read of the recovery trend + a warm invitation to check in at ${APP_URL}. Keep it brief and kind. (Use for the scheduled daily reminder; the interactive MODQ still happens in the app, not here.)`,
+      inputSchema: { message: z.string().min(1).max(1200).describe('The exact message text to send — you compose it, honestly and gently.') },
+    },
+    async ({ message }) => sendTelegram(message),
   )
 
   return server

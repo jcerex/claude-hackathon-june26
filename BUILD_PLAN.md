@@ -44,6 +44,8 @@ Data files (`*.csv`, `*.json`, `dev.db`, `apple_health_export/`, `*.HEIC`) are *
 - ✅ Remote MCP server (`@modelcontextprotocol/sdk`, Streamable HTTP, **stateless**) at `/mcp` on the existing Hono listener, reading the same SQLite DB. Tools: `get_trajectory`, `get_risk`, `get_evidence` (the scorecard), `run_checkin`.
 - ✅ Skill `app/skills/throughline-companion/SKILL.md` carries the honesty rubric + data-talk discipline + how to run the conversational MODQ before `run_checkin`. Rubric is also baked into the server `instructions` + every tool output (works even without the skill).
 - ✅ Deployed on Fly: **https://throughline-spine.fly.dev** (app `throughline-spine`, region `sjc`, 1 machine, volume-backed SQLite). `/mcp` verified live (`/api/health` 200; `get_trajectory` returns real data). `throughline` was taken globally → suffix.
+- ✅ **`send_telegram` MCP tool + daily-reminder routine** — pushes an honest, Opus-composed nudge to Telegram (bot `@ThroughlineSpineBot`; token + chat_id are Fly secrets). Tested end-to-end (real pings, local + prod). Routine prompt in `app/README.md`. Honest framing: scheduled = reminder + passive read, not an unattended scored MODQ (the interactive check-in stays in-app). The *user* creates the Routine via `/schedule` / claude.ai Routines.
+- ✅ **Calm redesign of the root page** ("a quiet companion at dawn"): warm paper theme, Fraunces + Hanken Grotesk, sage/clay palette, check-in as the breathing hero, a bespoke rising recovery curve, Evidence + detail chart moved to quiet secondary views. Check-in credits **Claude Opus 4.8**. Built, verified (desktop + mobile + live conversation), and deployed. Files: `app/src/{Home,CheckIn,Dashboard,Evidence,App}.tsx`, `styles.css`, `index.html`.
 - ☐ **Connect it in claude.ai** (manual, only you can): Settings → Connectors → Add custom connector → `https://throughline-spine.fly.dev/mcp` (authless).
 - **Acceptance:** in claude.ai, ask *"how's my back this week — am I at risk?"* → Opus answers from real data, honestly. This is the demo closer. (Already returns the honest, real-data answer when the tools are called — verified locally and against the live URL.)
 
@@ -55,16 +57,18 @@ Data files (`*.csv`, `*.json`, `dev.db`, `apple_health_export/`, `*.HEIC`) are *
 - **Acceptance MET:** verified end-to-end — a full conversational MODQ scored live (Opus ran all 10 sections → MODQ 6/100) and the point lands on the trajectory; in-browser Start→first-question loop screenshotted.
 - ⚠️ **Prod note:** the local `app/.env` was bundled into the Task-1 Fly image (`.dockerignore` didn't exclude it — now fixed). To run the in-app interviewer live on Fly, `fly secrets set ANTHROPIC_API_KEY=... -a throughline-spine` and redeploy (the redeploy also strips the leaked `.env` from the image). The MCP connector doesn't need the key.
 
-### Task 3 — Front-end enrichment + Evidence screen  [MED]
-- On the chart: draw the **forecast band** (`forecast_low/high`), **risk markers** (days with `risk_flags`), **turning-point** markers, and show today's **narration**.
-- New **Evidence / "How it knows" screen**: render the proven-vs-not scorecard from `docs/methodology-evidence.md`. The honesty flex made visible — judges will love it.
-- **Acceptance:** screenshot shows band + risk + narration + the Evidence screen.
+### Task 3 — Front-end enrichment + Evidence screen  [MED]  ✅ BUILT + VERIFIED + DEPLOYED
+- ✅ Chart (`app/src/Dashboard.tsx`): **nowcast uncertainty band** (`band_low/high`), **forward forecast cone** (`forecast_low/high` from the latest reading — naive per-day values left for Task 4 to damp), **risk-flag rug** (amber/red dots, days with `risk_flags`), **turning-point transition markers** (▲ green past-worst, ▼ red relapse-onset), and a **narration callout** (trend chip + today's narration + most-recent turning point).
+- ✅ **Evidence screen** (`app/src/Evidence.tsx`): key-numbers grid + the proven-vs-not scorecard with status pills (Supported / Not supported / Suggestive / Untested), from `docs/methodology-evidence.md` §8. Tabbed nav in `App.tsx` (Trajectory ↔ Evidence).
+- **Acceptance MET:** screenshots show band + risk + turning points + narration, and the Evidence scorecard.
+- ✅ **Deployed** — Task 2 + Task 3 shipped to https://throughline-spine.fly.dev (verified: live UI asset hashes match the build; `/api/interview` returns a live MODQ question using the Fly `ANTHROPIC_API_KEY` secret). The leaked `app/.env` is stripped from this image (`.dockerignore` fix).
 
-### Task 4 — Fix forecast damping  [SMALL]
-`brain.py`'s forecast is naive linear (overshoots to 0/100 on steep slides). Damp toward a natural-history recovery prior (mean-revert). Re-run `brain.py` → re-seed.
+### Task 4 — Fix forecast damping  [SMALL]  ✅ DONE
+- ✅ `brain.py` forecast replaced: naive linear (overshot to 0/100) → **damped trend that mean-reverts toward a natural-history recovery prior** (PRIOR=12, DAMP=0.82, REVERT=0.06 over a 14-day horizon). Re-ran `brain.py` → `build_seed.py`; `forecast_value` now ranges 1.4–72.1 (0/168 pinned at 100; worst flare day 86.5 → forecast 55.8; latest 22 → 15.3).
+- ✅ Re-seed solved for the live volume: `db.ts` now treats `timeline` as precomputed output and **refreshes it from the seed on every boot**, while surveys/signals/events seed once — so a `brain.py` re-run lands on deploy without wiping the user's check-in. Verified on prod (damped forecast live; the `s-checkin` survey preserved).
 
-### Task 5 — Extract `rubric.md` for submission  [SMALL]
-Pull the honesty + validation gates from `docs/methodology-evidence.md` / `brain.workflow.js` into a top-level `rubric.md`. Submission needs: brief + rubric + session log + live URL.
+### Task 5 — Extract `rubric.md` for submission  [SMALL]  ✅ DONE
+- ✅ Top-level `rubric.md` written — validation gates (A), the 7 YMYL honesty gates (B), the proven-vs-not scorecard (C), model-verifiable "done" (D), key numbers (E), and how the deterministic brain + agentic self-grading enforce it (F). Submission set: brief + **rubric** + session log + live URL.
 
 ## Runbook
 ```sh
@@ -84,10 +88,11 @@ Screenshot: `pnpm start` (prod, serves UI+API on :8080), drive a browser to `loc
 Story → **voice check-in** (Opus runs the MODQ live) → **trajectory** (real flare → Aug relapse → recovery; index tracks the MODQ) → **Evidence scorecard** ("what's proven / what I can't claim") → **MCP closer** in claude.ai ("am I at risk this week?"). Close: *"I didn't build an app. I taught Opus to understand a spine — honestly."*
 
 ## Honest open issues
-- Forecast naive until Task 4.
+- ✅ ~~Forecast naive until Task 4.~~ Fixed — damped mean-revert (Task 4).
 - n=1, one episode — generalization unproven; state it.
-- Interviewer + workflow need `ANTHROPIC_API_KEY` / credits.
-- Keep health data de-identified / episode-subset when mounting it anywhere external.
+- Interviewer + Telegram need `ANTHROPIC_API_KEY` / `TELEGRAM_*` — set locally in `app/.env` and as Fly secrets. (Bot token was shared in chat; rotate via BotFather if needed.) Workflow run needs Opus credits.
+- Keep health data de-identified / episode-subset when mounting it anywhere external. The `/mcp` connector is authless on a non-guessable URL — fine for the private demo.
+- All five build-plan tasks (1–5) are done; the calm redesign + Telegram reminder are extras, all deployed and verified live.
 
 ## Key numbers (don't misquote)
 R²=0.69 · in-sample MAE 9.1 · LOO MAE 10.5 · forward MAE ~14.9 · block-test direction r=0.94 · circularity cleared (gait predicts pain r=0.79, sleep r=0.69) · lead/lag coincident-not-leading · onset acute (no gait precursor) · the one phone-only leading signal = over-exertion spikes (8 Aug). Episode: ER 27 Jun 2025 → MODQ trough 82 → relapse late Aug → recovered to 12 by 1 Oct.
