@@ -27,6 +27,10 @@ export const getTimeline = () => json<TimelineRow[]>('/api/timeline')
 export const getSurveys = () => json<Survey[]>('/api/surveys')
 export const getEvents = () => json<EventRow[]>('/api/events')
 
+// Demo: trigger the Telegram check-in nudge.
+export const pingDemo = () =>
+  fetch('/api/demo-ping', { method: 'POST' }).then((r) => r.ok)
+
 // ── interviewer (conversational MODQ) ──────────────────────────────────────
 // The client maintains the full message array: each assistant turn stores the
 // `assistant` content blocks the server returned (sent back verbatim next turn),

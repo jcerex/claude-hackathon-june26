@@ -7,7 +7,7 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
 import { db } from './db'
 import { interview } from './interview'
-import { handleMcpRequest } from './mcp'
+import { handleMcpRequest, pushTelegram } from './mcp'
 
 // Local dev: load app/.env so the interviewer picks up ANTHROPIC_API_KEY (read
 // per-request, so loading it here — after imports — is in time). On Fly the key
@@ -25,6 +25,13 @@ const app = new Hono()
 app.route('/', interview)
 
 app.get('/api/health', (c) => c.json({ ok: true }))
+
+// Demo helper: ping the user's Telegram with a check-in nudge (the "Start demo" button).
+app.post('/api/demo-ping', async (c) => {
+  const url = process.env.APP_URL || 'https://throughline-spine.fly.dev'
+  const r = await pushTelegram(`🌿 Morning, Jamie — time for today's check-in. It only takes a minute: ${url}`)
+  return c.json(r, r.ok ? 200 : 500)
+})
 app.get('/api/timeline', (c) => c.json(db.prepare('SELECT * FROM timeline ORDER BY date').all()))
 app.get('/api/signals', (c) => c.json(db.prepare('SELECT * FROM daily_signals ORDER BY date').all()))
 app.get('/api/surveys', (c) => c.json(db.prepare('SELECT * FROM surveys ORDER BY date').all()))

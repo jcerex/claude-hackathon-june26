@@ -219,12 +219,11 @@ function runCheckin(items: Record<string, number>) {
 // ── tool: send_telegram (the scheduled daily nudge channel) ───────────────────
 const APP_URL = process.env.APP_URL || 'https://throughline-spine.fly.dev'
 
-async function sendTelegram(message: string) {
+// Plain Telegram push (reused by the MCP tool and the /api/demo-ping endpoint).
+export async function pushTelegram(message: string): Promise<{ ok: boolean; error?: string }> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   const chatId = process.env.TELEGRAM_CHAT_ID
-  if (!token || !chatId) {
-    return txt('Telegram is not configured on the server (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID unset) — the reminder was not sent.')
-  }
+  if (!token || !chatId) return { ok: false, error: 'Telegram not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID unset)' }
   try {
     const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
@@ -232,11 +231,15 @@ async function sendTelegram(message: string) {
       body: JSON.stringify({ chat_id: chatId, text: message, disable_web_page_preview: true }),
     })
     const j = (await r.json()) as { ok?: boolean; description?: string }
-    if (!j.ok) return txt(`Telegram rejected the message: ${j.description ?? 'unknown error'}.`)
-    return txt('Reminder sent to Telegram.')
+    return j.ok ? { ok: true } : { ok: false, error: j.description ?? 'unknown error' }
   } catch (e) {
-    return txt(`Could not reach Telegram: ${e instanceof Error ? e.message : String(e)}`)
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
+}
+
+async function sendTelegram(message: string) {
+  const r = await pushTelegram(message)
+  return txt(r.ok ? 'Reminder sent to Telegram.' : `Telegram send failed: ${r.error}`)
 }
 
 // ── server factory ────────────────────────────────────────────────────────────
