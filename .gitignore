@@ -5,6 +5,8 @@ trend.json
 calibration.json
 modq_items.csv
 
+hackathon-demo.mp4
+
 # Source/narrative images (personal)
 *.HEIC
 _tmp_narrative*.jpg
@@ -20,3 +22,4 @@ venv/
 
 # Node (if added later)
 node_modules/
+
