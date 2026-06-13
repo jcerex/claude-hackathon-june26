@@ -7,6 +7,8 @@
 |---|---|
 | [`brief.md`](brief.md) | Problem, insight, ODI analysis, data sources, scope, criteria map |
 | [`plan.md`](plan.md) | Architecture, Build-Day timeline, demo script, the model-verifiable "done"/eval |
+| [`docs/methodology-evidence.md`](docs/methodology-evidence.md) | Full empirical record — gait↔MODQ analysis, validation results, claims scorecard |
+| [`docs/open-datasets.md`](docs/open-datasets.md) | External open datasets for validation & the leading-signal track (gait, ODI, HRV/sleep) |
 | [`concepts/tributary/`](concepts/tributary/) | **Archived** — the earlier crowd-sourced-RWE concept, kept as a fallback. Its `rubric.md` + workflow pattern still transfers. |
 
 ## One-line pitch

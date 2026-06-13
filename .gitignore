@@ -2,6 +2,12 @@
 apple_health_export/
 daily_signals.csv
 trend.json
+calibration.json
+modq_items.csv
+
+# Source/narrative images (personal)
+*.HEIC
+_tmp_narrative*.jpg
 
 # macOS
 .DS_Store

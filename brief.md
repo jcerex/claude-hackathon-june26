@@ -1,68 +1,58 @@
 # Throughline — Build Day Brief
 
-**Codename: Throughline** *(placeholder — the signal-through-the-noise line you hold onto through a flare. Rename freely.)*
-*A passively-collected recovery trend line for sciatica.*
+*Your spine, understood. Track your recovery — and work toward seeing the next flare before it hits.*
 
-## One-line pitch
-The chart you're glued to during a severe flare — except it fills itself in from your phone and wearable instead of a survey, and Opus 4.8 tells you, honestly, which way you're actually heading.
+## The story (why this exists)
 
-## The problem (lived)
-When sciatica is severe, everything else goes quiet. The only question that matters is *"am I getting better or worse?"* — and the answer runs your whole psyche: hope or despair. The best objective answer today is the **Modified Oswestry Disability Index** (MODQ — the physio-standard low-back disability survey) — a 10-question survey, taken sporadically, plotted by hand. (I lived this, glued to the chart.) It's manual, low-frequency, and you stop filling it in on the worst days, exactly when you need it most.
+> A year ago I was in this room for the #1 AI Engineer hackathon. A week later I collapsed in the street from a flare-up of a spine injury — a 3-month experience of severe sciatica (spinal discs pressing on the nerves of the spinal column), chronic pain, stuck lying on the floor of my bedroom. A year on I've recovered 99%, but the underlying injury remains. And obsessing about minimising the risk of another flare-up is no way to live. So I built a harness around Claude Opus to manage this — for people with spine injuries.
 
-## The insight
-Most of what the ODI measures — walking, sleep, sitting/standing tolerance, getting out of the house — **is already being recorded** by the phone in your pocket and the band on your wrist. You don't need to *ask* how far someone can walk if their phone already logged that their walking speed fell 14% this week. **Turn the survey into a signal.**
+## What it is
+A spine-recovery companion. Plug in your data — Apple Health, Whoop, Oura, calendar — and Claude checks in with you on a regular but unobtrusive basis to fill the gaps, tracks your recovery passively, and is built toward warning you when you're on track for a flare.
 
-## Who it's for
-- **Primary:** people in a severe sciatica / chronic-pain episode who need a low-effort, objective read on their trajectory — and the reassurance that comes with it.
-- **Generalizes** to any function-tracked recovery: post-op, knee/hip rehab, MS, long COVID.
+## Who it's for, and the lifecycle
+People living with a spine injury, across the cycle **stable → warning → flare → recovery**:
+- **The engine (proven today):** passive recovery tracking + getting through a flare. Validated on real data — gait reconstructs the Modified Oswestry (MODQ), R²=0.69, direction r=0.94.
+- **The north-star (the vision):** *"know about your next flare before it happens."* Honestly the **least-proven** piece — gait is a *consequence* of pain, not a predictor — so it's built and instrumented toward, not yet claimed.
 
-## What it does
-1. Continuously estimates a 0–100 **functional recovery index** from passive signals, anchored by a daily **one-tap** pain score and calibrated against the occasional *real* MODQ **total score** (not section-by-section — see below).
-2. Shows the **trend, not the point** — a 7/30-day line — with Opus narrating each move in plain, honest language and pushing back on catastrophizing: *"today's a spike; the week is still up."*
-3. Surfaces deterioration / red-flag patterns for clinical attention. Never diagnoses.
+## Three pillars
+1. **Claude interviews you (the PROM, conversationally).** Instead of a 10-question form, Claude conducts the Modified Oswestry as a short, adaptive chat and maps it faithfully to the validated score — filling the calibration gaps painlessly (and far more pleasantly than a survey).
+2. **Passive tracking (the engine).** Gait + activity → a calibrated recovery-trajectory index, with turning-point detection ("you're past the worst") and honest, counter-catastrophizing narration. **Trends, not points.**
+3. **Leading-signal flare risk (the north-star).** Wearable sleep/HRV + calendar exposure + over-exertion spikes + a daily one-tap prodrome → a flare-risk read. An instrumented hypothesis, clearly labelled as such.
 
-## What the questions actually measure (Modified Oswestry / MODQ)
-Reading the 10 MODQ items matters: most grade *subjective pain* or *tolerance*, not how you move — so most can't be passively sensed, and the two you'd most expect to (sleeping, standing) need an Apple Watch that wasn't worn in the demo window.
+## How Opus earns it (the moat)
+The hard part isn't fitting a line — it's *proving the signal is real*. Opus runs the whole methodology autonomously **and skeptically**: discovers which signals carry severity, calibrates to the validated score, then **attacks its own result** (circularity test, forward-validation, lead/lag) and **grades every output against a YMYL honesty rubric**. The model is scientist *and* reviewer. That self-auditing is the trust layer a health AI needs — and the "surprised even us" capability.
 
-| # | MODQ item | Grades | Passive proxy | In this dataset? |
-|---|---|---|---|---|
-| 4 | **Walking** | distance before pain stops you | **steps + distance** | ✅ strong |
-| 8 | Social life | going out / activities | location, steps | partial (steps) |
-| 5 | Sitting | sitting tolerance (time) | sedentary bouts | weak / ambiguous |
-| 1 | Pain intensity | subjective severity | **one-tap self-report** | self-report only |
-| 2,3 | Personal care, Lifting | autonomy / load | — | no |
-| 6,7 | Standing, Sleeping | tolerance / sleep loss | watch stand & sleep | ✗ no watch in window |
-| 9,10 | Travelling, Employment | journey / work capacity | location history | ✗ not in HealthKit export |
-
-**Bottom line — the honest correction:** only **1 of 10 items (walking)** has a clean passive proxy here, and it's **step count / distance**, not walking speed. Walking **speed and asymmetry map to no single item** — there's no "how fast/evenly do you walk" question — so they act as a **global severity signal** instead (and they're the *best* flare detector we have). So we do **not** reconstruct the questionnaire section-by-section; we estimate the **total MODQ score's trajectory** from gait quality + walking volume, **calibrated against the real total score**. That makes the **one-tap pain score** more central, since the pain/subjective items can't be sensed.
-
-## Data sources (ranked by role)
-- ⭐ **Gait quality — walking asymmetry, speed, double-support** (iPhone-derived). Maps to no single item; it's the **global severity signal** and the strongest flare detector. Sciatica makes you limp (asymmetry), slow down, and spend longer on two feet.
-- ⭐ **Walking volume — steps + distance.** The proxy for the MODQ **walking item**, plus an activity/effort signal (and a partial stand-in for the social item when you stop leaving home).
-- **One-tap pain (0–10).** Now the primary subjective anchor — the pain / personal-care / lifting items can't be sensed, so this carries them.
-- **Medications** — pain-med frequency as a behavioural signal (if logged).
-- **Sleep / HRV / resting HR — unavailable in this dataset** (no synced Apple Watch in the window). A future enrichment, not a Build-Day input — narrate as "add a wearable to deepen it."
-- **MRI/scans — baseline context only, NOT a tracking input.** Imaging changes over months and correlates poorly with symptoms; fusing it into a *daily* score is a category error.
-
-## What the data already shows (validated)
-Parsed against Jamie's own export, the May–Sep 2025 flare is unmistakable in the passive signals alone — **walking speed 4.4 → 3.0 km/h, asymmetry ~2% → ~25%, steps ~8,000 → ~800/day** at the trough (week of 30 June) — recovering to baseline by early 2026. The signal exists and tracks the episode. The only remaining input is the real MODQ scores to fix the absolute scale.
-
-## Scope
-**IN:** ingest a real Apple Health export (mine) + optionally one wearable; the fusion + personal-baseline + calibration pipeline; the trend UI; Opus narration; the "passive-vs-real-ODI" eval. Deploy to a live URL.
-**OUT (vision, narrated — not built):** live multi-OAuth integrations, a native iOS app, population-scale clinical validation, multi-user / clinician sharing.
-
-## Honesty & safety spec (YMYL)
-- **Trends, not points** — the anxiety guard. No alarming single-day alerts.
-- *"Here's what your data shows"* — never *"you're fine"* or *"you'll recover."*
-- **No diagnosis.** The index is an explicitly-personal signal, not a validated clinical score.
-- **No section-level overclaim.** We estimate the *total* trajectory, not individual MODQ items; the index is a calibrated proxy, not the questionnaire.
-- Deterioration → suggest a clinician; red-flag patterns escalated.
-- Data stays **user-controlled / on-device**.
+## Data sources (`app/sources/` — pluggable connectors)
+Apple Health (gait — validated) · Whoop / Oura (sleep/HRV — forward) · calendar (exposure) · Open-Meteo (weather covariate, backfilled). Adapters drop in; the schema ports to iOS.
 
 ## How it maps to the judging criteria
 | Criterion | Weight | Why |
 |---|---|---|
-| **Impact** | 35% | An objective trajectory + an antidote to catastrophizing for the under-served *psychological* axis of chronic pain. Generalizes to any recovery. |
-| **Demo** | 35% | **You are the dataset** — real Apple Health export across a real flare→recovery, with the real ODI dots landing on the passive line. Provable, personal, no fake data. |
-| **Opus 4.8** | 15% | Fuses gait quality + walking volume + a pain tap into a calibrated severity estimate, with honest "why it moved" narration and counter-catastrophizing. Beyond a basic integration. |
-| **Orchestration** | 15% | The cleanest "done" of any option: passive estimate vs **real ODI** → MAE / correlation on held-out days. Model-gradeable, repeatable across conditions. |
+| **Impact** | 35% | Low back pain is the world's #1 cause of disability (~600M). A companion that gets you through a flare today and works toward seeing the next one coming is real, urgent, and personal. |
+| **Demo** | 35% | Runs on a **real, validated episode**. Opus re-runs the investigation live (calibrate → adversarially validate → honest verdict), the tracker replays the flare + relapse, and Claude interviews you to score the MODQ on the spot. |
+| **Opus 4.8** | 15% | Conversational PROM administration + autonomous, *self-critiquing* data science + YMYL self-grading. Well beyond a chatbot. |
+| **Orchestration** | 15% | The methodology **is** the workflow (ingest → discover → calibrate → ‖circularity · forward · lead/lag‖ → grade → emit). "Done" = passes the validation gates; reruns on any dataset. |
+
+## Demo (~4 min)
+1. **The story** — the narrative above, in your voice.
+2. **Claude interviews you** — a 60-second conversational MODQ → a validated score, live.
+3. **The engine** — the recovery index replays your real flare → relapse → recovery, with the turning point and the relapse caught; honest narration.
+4. **The skeptic** — Opus re-derives + *adversarially validates* the index on screen (not tautology; direction holds; coincident-not-leading).
+5. **The north-star** — the flare-risk read + the honest "here's what we can't yet claim" scorecard. "Built to see it coming."
+
+## What "done" looks like (model-verifiable)
+- Index tracks the real MODQ: **LOO MAE ≤ 12, r ≥ 0.8** (met: 10.5 / 0.83).
+- Circularity cleared; forward-validation reported honestly.
+- **100% of narrations pass the YMYL honesty rubric.**
+- The interviewer's conversational score matches a held-out form score within tolerance.
+- Deployed to a live URL (Fly), responds 200.
+
+## Honesty spec (YMYL)
+Trends not points · no diagnosis · no precise prognosis · early-warning labelled instrumented/unproven · escalation prompts on sustained decline · data user-controlled · the **"what's proven vs not" scorecard ships with the product** (see `docs/methodology-evidence.md`).
+
+## Scope
+**IN:** the app (track + interviewer + risk + narration) on the real episode, deployed.
+**OUT (narrated, not built):** cross-condition generalization, *validated* onset prediction, clinical adoption.
+
+## Architecture
+Web (Vite + React + Hono + SQLite) on **Fly.io** (volume-backed DB). The "brain" computes the timeline offline; the **Claude interviewer** and the **agentic validation workflow** are the Opus surfaces. Methodology + evidence: `docs/methodology-evidence.md`.
