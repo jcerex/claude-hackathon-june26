@@ -57,19 +57,6 @@ Validated on a fully-instrumented episode: ER 27 Jun 2025 → MODQ trough 82 →
 - **Honesty skill** — a `SKILL.md` carrying the rubric so Opus reasons with the right discipline. ([`app/skills/throughline-companion/SKILL.md`](app/skills/throughline-companion/SKILL.md))
 - **Calm, pain-first web app + Telegram reminders** — a warm, distinctive UI (the check-in is the hero) and a daily Telegram nudge a Claude Routine can fire.
 
-## How it maps to the judging criteria
-
-| Criterion | Weight | Why |
-|---|---:|---|
-| **Impact** | 35% | Low back pain is the world's #1 cause of disability (~600M people). Getting through a flare today, and working toward seeing the next one coming, is real, urgent, and personal. |
-| **Demo** | 35% | Runs on a **real, validated episode** — a live conversational MODQ, the replayed flare→relapse→recovery, and a multi-source forward read with a plan. |
-| **Opus 4.8** | 15% | Conversational PROM + autonomous, *self-critiquing* data science + YMYL self-grading. Well beyond a chatbot. |
-| **Orchestration** | 15% | The methodology **is** the workflow: ingest → discover → calibrate → ‖circularity · forward · lead/lag‖ → grade → emit. "Done" = passes the gates; reruns on any dataset. |
-
-## What we *don't* claim
-
-Honesty, in the README too: this is **n = 1, one episode**, not clinically validated. Gait is a *consequence* of pain, not a precursor — so the model **does not predict flare onset**; early-warning is an instrumented hypothesis, clearly labelled. Trends, not points. No diagnosis, no precise prognosis. The full guardrails and validation gates: [`rubric.md`](rubric.md).
-
 ## Architecture & stack
 
 Web app — **Vite + React + TypeScript** (calm UI, Chart.js + a bespoke recovery curve) · **Hono** API · **better-sqlite3**. The **MCP server** (`@modelcontextprotocol/sdk`, stateless Streamable HTTP) is mounted on the same listener and reads the same DB. The **brain** (Python) computes the timeline offline; the app reads & replays. Deployed on **Fly.io** (region `sjc`, volume-backed SQLite, single machine — SQLite is single-writer). Telegram via the Bot API. Dev/stack details: [`app/README.md`](app/README.md).
