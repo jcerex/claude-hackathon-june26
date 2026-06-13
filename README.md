@@ -6,6 +6,10 @@
 
 **▶ Live:** **https://throughline-spine.fly.dev**  ·  **MCP connector:** `https://throughline-spine.fly.dev/mcp` (add as a custom connector in claude.ai)  ·  **Model:** Claude **Opus 4.8**
 
+<p align="center">
+  <img src="docs/home.png" alt="Throughline — the calm, pain-first home: a quick check-in with Opus 4.8 and a live recovery trend" width="440">
+</p>
+
 ---
 
 ## Why this exists
