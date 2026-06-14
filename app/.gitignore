@@ -4,5 +4,6 @@ dist
 *.db-shm
 *.db-wal
 dev.db
-data/seed.json
+# derived from personal health data — brain output, weather backfill, merged seed
+data/*.json
 .env
